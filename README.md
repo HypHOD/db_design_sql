@@ -3,6 +3,6 @@
 ```
 CREATE DATABASE campus_shop;
 \c campus_shop;
-\i /Users/hods/Documents/github/se_design/db_create.sql;
+\i /[your_path]/db_create.sql;
 ```
 
