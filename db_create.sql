@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS product (
     quality SMALLINT DEFAULT 1,
     reject_reason VARCHAR(255),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP GENERATED ALWAYS AS (get_current_timestamp ()) STORED
+    update_time TIMESTAMP GENERATED ALWAYS AS (get_current_timestamp ()) STORED,
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES category (category_id) ON DELETE SET NULL
 );
 
 -- create table prodcut_image
@@ -56,7 +58,8 @@ CREATE TABLE IF NOT EXISTS product_image (
     image_id SERIAL PRIMARY KEY,
     product_id INT NOT NULL REFERENCES product (product_id),
     image_url VARCHAR(255) NOT NULL,
-    sort_order SMALLINT DEFAULT 0
+    sort_order SMALLINT DEFAULT 0,
+    FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE
 );
 -- create table address
 CREATE TABLE IF NOT EXISTS address (
@@ -65,7 +68,10 @@ CREATE TABLE IF NOT EXISTS address (
     receiver_name VARCHAR(50) NOT NULL,
     receiver_phone VARCHAR(20) NOT NULL,
     receiver_address VARCHAR(255) NOT NULL,
-    is_default SMALLINT DEFAULT 0
+    is_default SMALLINT DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    UNIQUE (user_id, is_default)
+    WHERE (is_default = 1)
 );
 -- create table cart
 CREATE TABLE IF NOT EXISTS cart (
@@ -80,7 +86,8 @@ CREATE TABLE IF NOT EXISTS favorite (
     favorite_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES user_info (user_id),
     product_id INT NOT NULL REFERENCES product (product_id),
-    add_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    add_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, product_id)
 );
 
 -- create table order
@@ -97,7 +104,11 @@ CREATE TABLE IF NOT EXISTS user_order (
     pay_time TIMESTAMP,
     receive_time TIMESTAMP,
     cancel_time TIMESTAMP,
-    refund_reason VARCHAR(255)
+    refund_reason VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE,
+    CHECK (user_id <> seller_id)
 );
 -- create table comment
 CREATE TABLE IF NOT EXISTS comment (
@@ -108,7 +119,10 @@ CREATE TABLE IF NOT EXISTS comment (
     comment_content VARCHAR(1000),
     rating SMALLINT DEFAULT 10,
     comment_status SMALLINT DEFAULT 0,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP FOREIGN KEY (order_id) REFERENCES user_order (order_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    UNIQUE (order_id)
 );
 -- create table reserve
 CREATE TABLE IF NOT EXISTS reserve (
@@ -119,14 +133,24 @@ CREATE TABLE IF NOT EXISTS reserve (
     address_id INT NOT NULL REFERENCES address (address_id),
     reserve_status SMALLINT DEFAULT 0,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    finish_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    finish_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP FOREIGN KEY (order_id) REFERENCES user_order (order_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (address_id) REFERENCES address (address_id) ON DELETE CASCADE,
+    UNIQUE (order_id)
 );
 -- create table record 历史记录
 CREATE TABLE IF NOT EXISTS record (
     record_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES user_info (user_id),
     product_id INT NOT NULL REFERENCES product (product_id),
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE,
+    UNIQUE (
+        user_id,
+        product_id,
+        DATE(create_time)
+    )
 );
 -- create table b_notice
 CREATE TABLE IF NOT EXISTS b_notice (
@@ -142,7 +166,8 @@ CREATE TABLE IF NOT EXISTS b_login (
     login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ip_address VARCHAR(50),
     login_device VARCHAR(100),
-    login_status BOOLEAN
+    login_status BOOLEAN,
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE
 );
 -- create table b_op
 CREATE TABLE IF NOT EXISTS b_op (
@@ -151,7 +176,8 @@ CREATE TABLE IF NOT EXISTS b_op (
     op_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     op_type VARCHAR(20),
     op_object VARCHAR(100),
-    op_detail TEXT
+    op_detail TEXT,
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE RESTRICT
 );
 -- create table b_error
 CREATE TABLE IF NOT EXISTS b_error (
@@ -163,7 +189,8 @@ CREATE TABLE IF NOT EXISTS b_error (
     error_message TEXT NOT NULL,
     handle_status VARCHAR(20) NOT NULL DEFAULT '未处理',
     handle_time TIMESTAMP,
-    handle_detail TEXT
+    handle_detail TEXT,
+    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE RESTRICT
 );
 
 -- 返回当前时间戳
