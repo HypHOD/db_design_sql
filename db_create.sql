@@ -201,3 +201,22 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE;
 -- 标记为 STABLE（允许在生成列中使用）
+
+-- 创建索引
+CREATE INDEX idx_product_category ON product (category_id);
+
+CREATE INDEX idx_product_user ON product (user_id);
+
+CREATE INDEX idx_order_user ON user_order (user_id);
+
+CREATE INDEX idx_order_seller ON user_order (seller_id);
+
+CREATE INDEX idx_comment_user ON comment (user_id);
+
+CREATE INDEX idx_comment_seller ON comment (seller_id);
+
+CREATE INDEX idx_reserve_user ON reserve (user_id);
+
+CREATE INDEX idx_reserve_seller ON reserve (seller_id);
+
+CREATE INDEX idx_reserve_address ON reserve (address_id);
