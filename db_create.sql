@@ -64,6 +64,15 @@ CREATE TABLE IF NOT EXISTS cart (
     product_id INT NOT NULL REFERENCES product (product_id),
     add_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- create table favorite
+CREATE TABLE IF NOT EXISTS favorite (
+    favorite_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES user_info (user_id),
+    product_id INT NOT NULL REFERENCES product (product_id),
+    add_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- create table order
 CREATE TABLE IF NOT EXISTS user_order (
     order_id SERIAL PRIMARY KEY,
