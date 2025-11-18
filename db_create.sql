@@ -5,17 +5,27 @@
 -- 使用数据库
 -- >\c campus_shop;
 
+DROP DATABASE IF EXISTS campus_shop;
+
+--  创建数据库
+CREATE DATABASE campus_shop
+WITH
+    OWNER = postgres ENCODING = 'UTF8' LC_COLLATE = 'zh_CN.UTF-8' LC_CTYPE = 'zh_CN.UTF-8' TABLESPACE = pg_default CONNECTION
+LIMIT = -1;
+-- \connect campus_shop;
+\c campus_shop;
+
 -- create table user
 CREATE TABLE IF NOT EXISTS user_info (
     user_id SERIAL PRIMARY KEY,
     user_student_id VARCHAR(20) UNIQUE NOT NULL,
     user_password VARCHAR(50) NOT NULL,
     user_name VARCHAR(20) NOT NULL,
-    user_collage VARCHAR(20),
+    user_college VARCHAR(20),
     user_email VARCHAR(100) UNIQUE NOT NULL,
     user_create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_status SMALLINT DEFAULT 1,
-    user_avart VARCHAR(255) DEFAULT 'default-avatar.jpg'
+    user_avatar VARCHAR(255) DEFAULT 'default-avatar.jpg'
 );
 
 -- create table category
@@ -30,10 +40,10 @@ CREATE TABLE IF NOT EXISTS category (
 CREATE TABLE IF NOT EXISTS product (
     product_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES user_info (user_id),
-    category INT NOT NULL REFERENCES category (category_id),
+    category_id INT NOT NULL REFERENCES category (category_id),
     product_title VARCHAR(255) NOT NULL,
-    product_o_price INT NOT NULL,
-    product_price INT NOT NULL,
+    product_original_price INT NOT NULL,
+    product_current_price INT NOT NULL,
     product_status SMALLINT NOT NULL DEFAULT 0,
     quality SMALLINT DEFAULT 1,
     reject_reason VARCHAR(255),
@@ -115,7 +125,7 @@ CREATE TABLE IF NOT EXISTS reserve (
 CREATE TABLE IF NOT EXISTS record (
     record_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES user_info (user_id),
-    product_id INT NOT NULL REFERENCES product (prodcut_id),
+    product_id INT NOT NULL REFERENCES product (product_id),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 -- create table b_notice
