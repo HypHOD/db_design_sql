@@ -5,16 +5,6 @@
 -- 使用数据库
 -- >\c campus_shop;
 
-DROP DATABASE IF EXISTS campus_shop;
-
---  创建数据库
-CREATE DATABASE campus_shop
-WITH
-    OWNER = postgres ENCODING = 'UTF8' LC_COLLATE = 'zh_CN.UTF-8' LC_CTYPE = 'zh_CN.UTF-8' TABLESPACE = pg_default CONNECTION
-LIMIT = -1;
--- \connect campus_shop;
-\c campus_shop;
-
 -- create table user
 CREATE TABLE IF NOT EXISTS user_info (
     user_id SERIAL PRIMARY KEY,
@@ -39,8 +29,8 @@ CREATE TABLE IF NOT EXISTS category (
 -- create table product
 CREATE TABLE IF NOT EXISTS product (
     product_id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES user_info (user_id),
-    category_id INT NOT NULL REFERENCES category (category_id),
+    user_id INT NOT NULL REFERENCES user_info (user_id) ON DELETE CASCADE,
+    category_id INT REFERENCES category (category_id) ON DELETE SET NULL,
     product_title VARCHAR(255) NOT NULL,
     product_original_price INT NOT NULL,
     product_current_price INT NOT NULL,
@@ -48,9 +38,7 @@ CREATE TABLE IF NOT EXISTS product (
     quality SMALLINT DEFAULT 1,
     reject_reason VARCHAR(255),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP GENERATED ALWAYS AS (get_current_timestamp ()) STORED,
-    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES category (category_id) ON DELETE SET NULL
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- create table prodcut_image
@@ -64,14 +52,12 @@ CREATE TABLE IF NOT EXISTS product_image (
 -- create table address
 CREATE TABLE IF NOT EXISTS address (
     address_id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES user_info (user_id),
+    user_id INT NOT NULL REFERENCES user_info (user_id) ON DELETE CASCADE,
     receiver_name VARCHAR(50) NOT NULL,
     receiver_phone VARCHAR(20) NOT NULL,
     receiver_address VARCHAR(255) NOT NULL,
     is_default SMALLINT DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
-    UNIQUE (user_id, is_default)
-    WHERE (is_default = 1)
+    UNIQUE (address_id)
 );
 -- create table cart
 CREATE TABLE IF NOT EXISTS cart (
@@ -119,7 +105,7 @@ CREATE TABLE IF NOT EXISTS comment (
     comment_content VARCHAR(1000),
     rating SMALLINT DEFAULT 10,
     comment_status SMALLINT DEFAULT 0,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP FOREIGN KEY (order_id) REFERENCES user_order (order_id) ON DELETE CASCADE,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
     FOREIGN KEY (seller_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
     UNIQUE (order_id)
@@ -133,7 +119,7 @@ CREATE TABLE IF NOT EXISTS reserve (
     address_id INT NOT NULL REFERENCES address (address_id),
     reserve_status SMALLINT DEFAULT 0,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    finish_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP FOREIGN KEY (order_id) REFERENCES user_order (order_id) ON DELETE CASCADE,
+    finish_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
     FOREIGN KEY (seller_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
     FOREIGN KEY (address_id) REFERENCES address (address_id) ON DELETE CASCADE,
@@ -144,13 +130,9 @@ CREATE TABLE IF NOT EXISTS record (
     record_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES user_info (user_id),
     product_id INT NOT NULL REFERENCES product (product_id),
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE CASCADE,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE,
-    UNIQUE (
-        user_id,
-        product_id,
-        DATE(create_time)
-    )
+    UNIQUE (user_id, product_id)
 );
 -- create table b_notice
 CREATE TABLE IF NOT EXISTS b_notice (
@@ -193,15 +175,6 @@ CREATE TABLE IF NOT EXISTS b_error (
     FOREIGN KEY (user_id) REFERENCES user_info (user_id) ON DELETE RESTRICT
 );
 
--- 返回当前时间戳
-CREATE OR REPLACE FUNCTION get_current_timestamp()
-RETURNS TIMESTAMP AS $$
-BEGIN
-    RETURN CURRENT_TIMESTAMP;
-END;
-$$ LANGUAGE plpgsql STABLE;
--- 标记为 STABLE（允许在生成列中使用）
-
 -- 创建索引
 CREATE INDEX idx_product_category ON product (category_id);
 
@@ -220,3 +193,16 @@ CREATE INDEX idx_reserve_user ON reserve (user_id);
 CREATE INDEX idx_reserve_seller ON reserve (seller_id);
 
 CREATE INDEX idx_reserve_address ON reserve (address_id);
+
+-- 部分唯一索引：每个用户只能有一个 is_default = 1 的地址
+CREATE UNIQUE INDEX IF NOT EXISTS ux_address_user_default ON address (user_id)
+WHERE (is_default = 1);
+
+-- 返回当前时间戳
+CREATE OR REPLACE FUNCTION get_current_timestamp()
+RETURNS TIMESTAMP AS $$
+BEGIN
+    RETURN CURRENT_TIMESTAMP;
+END;
+$$ LANGUAGE plpgsql STABLE;
+-- 标记为 STABLE（允许在生成列中使用）
